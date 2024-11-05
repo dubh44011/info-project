@@ -1,0 +1,246 @@
+try:
+    import sys
+    import logging
+    import traceback
+    from PyQt5 import QtWidgets
+    from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QComboBox, QLabel,
+                                QFormLayout, QHBoxLayout, QSpinBox, QPushButton, QDialog,
+                                QLineEdit, QDialogButtonBox, QTableWidget, QHeaderView,
+                                QMessageBox, QSizePolicy)
+    from PyQt5 import QtGui
+    from PyQt5.QtGui import (QFont, QPixmap)
+    from PyQt5.QtCore import Qt, QSize
+    import mysql.connector
+    from mysql.connector import Error
+
+    class MainWindow(QWidget):
+        def __init__(self):
+            super().__init__()
+            self.setWindowTitle('Dream Holidays')
+            # Set minimum window size
+            self.setMinimumSize(700, 600)
+            
+            # Main layout
+            layout = QVBoxLayout(self)
+            layout.setContentsMargins(20, 20, 20, 20)
+            layout.setSpacing(20)
+            
+            # Title label with dynamic font sizing
+            self.title_LBL = QLabel("DREAM HOLIDAYS")
+            self.title_LBL.setAlignment(Qt.AlignCenter)
+            self.title_LBL.setStyleSheet("color: #00ccff; font-weight: bold;")
+            self.title_LBL.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            layout.addWidget(self.title_LBL)
+            
+            # Logo label
+            self.logo_lbl = QLabel()
+            self.logo_lbl.setAlignment(Qt.AlignCenter)
+            pixmap = QtGui.QPixmap("C:/Users/XII Info/Downloads/harshith XII CAE/pycharm/dream_holidays/logo4.png")
+            self.logo_lbl.setPixmap(pixmap.scaled(250, 250, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.logo_lbl.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            layout.addWidget(self.logo_lbl)
+            
+            # Continue button
+            button_container = QHBoxLayout()
+            self.continue_btn = QPushButton("Continue")
+            self.continue_btn.setStyleSheet("""
+                padding: 10px;
+                border-radius: 5px;
+                background-color: #66ffff;
+                font-family: Arial;
+            """)
+            self.continue_btn.clicked.connect(self.main)
+            self.continue_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            button_container.addStretch()
+            button_container.addWidget(self.continue_btn)
+            button_container.addStretch()
+            layout.addLayout(button_container)
+            
+            # Set the main layout
+            self.setLayout(layout)
+            
+            # Dynamic styling
+            self.setStyleSheet("""
+                QWidget {
+                    background-color: #FFE5B4;
+                    border-radius: 10px;
+                }
+                QPushButton:hover {
+                    background-color: #33ff77;
+                }
+            """)
+            
+        def resizeEvent(self, event):
+            super().resizeEvent(event)
+            # Adjust font size based on window width
+            font_size = min(36, max(20, self.width() // 25))
+            self.title_LBL.setStyleSheet(f"font-size: {font_size}px; color: #00ccff; font-weight: bold;")
+            
+            # Adjust logo size
+            logo_size = min(250, self.width() // 3)
+            pixmap = QtGui.QPixmap("C:/Users/XII Info/Downloads/harshith XII CAE/pycharm/dream_holidays/logo4.png")
+            self.logo_lbl.setPixmap(pixmap.scaled(logo_size, logo_size, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            
+            # Adjust button size
+            button_width = min(150, self.width() // 6)
+            self.continue_btn.setFixedWidth(button_width)
+            
+        def main(self):
+            self.h = HomePage()
+            self.h.show()
+            self.hide()
+
+    class HomePage(QDialog):
+        def __init__(self):
+            super().__init__()
+            self.setWindowTitle('Dream Holidays')
+            self.setMinimumSize(1000, 600)
+            
+            # Main layout
+            layout = QVBoxLayout(self)
+            
+            # Navigation bar
+            nav_layout = QHBoxLayout()
+            nav_layout.setSpacing(10)
+            
+            self.home_button = QPushButton()
+            self.home_button.setFixedHeight(40)
+            self.home_button.setStyleSheet("""
+                padding: 10px;
+                border-radius: 5px;
+                background-image: url(C:/Users/XII Info/Downloads/harshith XII CAE/pycharm/dream_holidays/logo2);
+            """)
+            
+            nav_buttons = [
+                ("Tours", self.temp),
+                ("Flights", self.flights),
+                ("Hotels", self.hotels),
+                ("About US", None)
+            ]
+            
+            nav_layout.addWidget(self.home_button)
+            
+            for text, callback in nav_buttons:
+                btn = QPushButton(text)
+                btn.setStyleSheet("padding: 10px; border-radius: 5px; font-size: 18px;")
+                if callback:
+                    btn.clicked.connect(callback)
+                nav_layout.addWidget(btn)
+            
+            layout.addLayout(nav_layout)
+            
+            # Content area
+            content_layout = QVBoxLayout()
+            
+            # Tagline
+            self.tagline_lbl = QLabel("Where Dreams take Flight")
+            self.tagline_lbl.setStyleSheet("color: white; font-weight: bold;")
+            self.tagline_lbl.setFont(QtGui.QFont("Bahnschrift Light SemiCondensed"))
+            content_layout.addWidget(self.tagline_lbl)
+            
+            # Introduction
+            self.intro_lbl = QLabel("At Dream Holidays, we are passionate about helping people explore the world.\n"
+                                  "Our mission is to make travel accessible and enjoyable for everyone.")
+            self.intro_lbl.setStyleSheet("color: white; font-weight: bold;")
+            self.intro_lbl.setFont(QtGui.QFont("Bahnschrift Light SemiCondensed"))
+            content_layout.addWidget(self.intro_lbl)
+            
+            # Discover section
+            self.discover_lbl = QLabel("Discover")
+            self.discover_lbl.setStyleSheet("color: white; font-weight: bold; text-decoration: underline;")
+            self.discover_lbl.setFont(QtGui.QFont("Felix Titling"))
+            content_layout.addWidget(self.discover_lbl)
+            
+            # Cards grid
+            cards_layout = QHBoxLayout()
+            cards_layout.setSpacing(20)
+            
+            # Create card layouts
+            card_data = [
+                {
+                    "image": "eiffel_tower",
+                    "title": "Best chance to enjoy\nBig Savings",
+                    "callback": self.temp
+                },
+                {
+                    "image": "best_offers",
+                    "title": "Discounts You wont find\nanywhere else",
+                    "callback": None
+                },
+                {
+                    "image": "hotels",
+                    "title": "Unbeatable Rates for\nUnforgettable Stays",
+                    "callback": None
+                },
+                {
+                    "image": "logo1",
+                    "title": "Crafting Memories,\nOne Trip at a Time",
+                    "callback": None
+                }
+            ]
+            
+            for card in card_data:
+                card_container = QVBoxLayout()
+                
+                btn = QPushButton()
+                btn.setStyleSheet(f"background-image: url(C:/Users/XII Info/Downloads/harshith XII CAE/pycharm/dream_holidays/{card['image']});")
+                if card["callback"]:
+                    btn.clicked.connect(card["callback"])
+                
+                lbl = QLabel(card["title"])
+                lbl.setStyleSheet("color: white;")
+                lbl.setFont(QtGui.QFont("Bodoni MT"))
+                
+                card_container.addWidget(btn)
+                card_container.addWidget(lbl)
+                cards_layout.addLayout(card_container)
+            
+            content_layout.addLayout(cards_layout)
+            layout.addLayout(content_layout)
+            
+            # Set the background
+            self.setStyleSheet("""
+                QDialog {
+                    background-image: url(C:/Users/XII Info/Downloads/harshith XII CAE/pycharm/dream_holidays/background);
+                }
+                QPushButton:hover {
+                    background-color: #0056b3;
+                }
+            """)
+            
+        def resizeEvent(self, event):
+            super().resizeEvent(event)
+            # Adjust font sizes based on window size
+            width = self.width()
+            self.tagline_lbl.setStyleSheet(f"font-size: {max(20, width//30)}px; color: white; font-weight: bold;")
+            self.intro_lbl.setStyleSheet(f"font-size: {max(16, width//40)}px; color: white; font-weight: bold;")
+            self.discover_lbl.setStyleSheet(f"font-size: {max(24, width//25)}px; color: white; font-weight: bold; text-decoration: underline;")
+            
+        def temp(self):
+            self.pkg = Tours()
+            self.pkg.show()
+            self.hide()
+            
+        def flights(self):
+            self.f = Flights()
+            self.f.show()
+            self.hide()
+            
+        def hotels(self):
+            self.ho = Hotels()
+            self.ho.show()
+            self.hide()
+
+    # Similar responsive modifications would be needed for Tours, Flights, and Hotels classes
+    # The pattern would be similar - using layouts instead of fixed geometries and implementing
+    # resizeEvent handlers to adjust sizes dynamically
+
+    if __name__ == '__main__':
+        app = QApplication(sys.argv)
+        main_window = MainWindow()
+        main_window.show()
+        sys.exit(app.exec_())
+        
+except Exception as e:
+    print(e)
+    traceback.print_exc()
